@@ -26,7 +26,7 @@ on init
 
     mkdir /efs 0771 system system
     
-    write /sys/block/mmcblk0/queue/iosched/slice_idle 0
+    write /sys/block/mmcblk0/queue/iosched/slice_idle 1
 
 # Vibetonz
     export VIBE_PIPE_PATH /dev/pipes
@@ -50,7 +50,7 @@ on post-fs-data
     chown bluetooth net_bt_stack /data/misc/bluetooth
 
 # Fuse sdcard
-    setprop ro.crypto.fuse_sdcard true
+    setprop ro.crypto.fuse_sdcard false
 
     chown system radio /efs
     chmod 0775 /efs
@@ -234,13 +234,13 @@ on boot
     chown system media_rw /sys/class/mdnie/mdnie/lcd_type
 
 # Power management settings
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
-    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor interactive
-    write /sys/module/cpuidle/parameters/lp2_in_idle 0
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor powersave
+    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor powersave
+    write /sys/module/cpuidle/parameters/lp2_in_idle 1
 
 # Interactive (initial) setup
-    write /sys/devices/system/cpu/cpufreq/interactive/boost_factor 2
-    write /sys/devices/system/cpu/cpufreq/interactive/input_boost 1
+    write /sys/devices/system/cpu/cpufreq/interactive/boost_factor 0
+    write /sys/devices/system/cpu/cpufreq/interactive/input_boost 0
     write /sys/devices/system/cpu/cpufreq/interactive/sustain_load 80
 
 # Enable KSM
@@ -270,7 +270,7 @@ on boot
    chmod 666 /sys/devices/platform/tegra-i2c.0/i2c-0/0-005a/slowscan_enable
 
 # Default Read Ahead value for sdcards
-    write /sys/block/mmcblk0/queue/read_ahead_kb 2048
+    write /sys/block/mmcblk0/queue/read_ahead_kb 0
 
 # Modem interface (For 3g/4g tabs)
     chown system radio /sys/devices/platform/tegra-ehci.1/ehci_power
@@ -296,56 +296,47 @@ on property:my.gps=vzw
     chown gps system /data/gps
     chmod 0771 /data/gps
 
-service p2p_supplicant /system/bin/wpa_supplicant \
-        -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf -N \
-        -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
+service p2p_supplicant /system/bin/wpa_supplicant
+        -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf -N
+        -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf
         -e/data/misc/wifi/entropy.bin
     class main
     socket wpa_wlan0 dgram 660 wifi wifi
-    disabled
     oneshot
 
-service wpa_supplicant /system/bin/wpa_supplicant \
+service wpa_supplicant /system/bin/wpa_supplicant
     -Dnl80211 -iwlan0 -c/data/misc/wifi/wpa_supplicant.conf -e/data/misc/wifi/entropy.bin
 #   we will start as root and wpa_supplicant will switch to user wifi
 #   after setting up the capabilities required for WEXT
-#   user wifi
-#   group wifi inet keystore
+    user wifi
+   group wifi inet keystore
     class main
     socket wpa_wlan0 dgram 660 wifi wifi
-    disabled
     oneshot
 
 service dhcpcd_wlan0 /system/bin/dhcpcd -ABKL
     class main
-    disabled
     oneshot
 
 service dhcpcd_p2p /system/bin/dhcpcd -aABKL
     class main
-    disabled
     oneshot
 
 service dhcpcd_bnep0 /system/bin/dhcpcd -ABKL
     class main
-    disabled
     oneshot
 
 service dhcpcd_eth0 /system/bin/dhcpcd -ABKL -f/system/etc/dhcpcd/dhcpcd.conf
     class main
-    disabled
     oneshot
 
 service iprenew_wlan0 /system/bin/dhcpcd -n
-    disabled
     oneshot
 
 service iprenew_p2p /system/bin/dhcpcd -n
-    disabled
     oneshot
 
 service iprenew_eth0 /system/bin/dhcpcd -n
-    disabled
     oneshot
 
 service macloader /system/bin/macloader
@@ -371,12 +362,11 @@ service gps-daemon /system/bin/gpsd
 
 # virtual sdcard daemon running as media_rw (1023)
 service sdcard /system/bin/sdcard /data/media /mnt/shell/emulated 1023 1023
-    class late_start
+    class main
 
 # bugreport is triggered by the VOLUME-DOWN and VOLUME-UP keys
 service bugreport /system/bin/dumpstate -d -v -o /data/storage/bugreports/bugreport
     class main
-    disabled
     oneshot
     keycodes 115 114
 
