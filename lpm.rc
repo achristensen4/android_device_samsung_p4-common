@@ -28,7 +28,7 @@ on fs
 
 on post-fs
     # once everything is setup, no need to modify /
-    mount rootfs rootfs / ro remount
+    mount rootfs rootfs / rw remount
 
 on boot
 # backlight
@@ -48,17 +48,16 @@ service ueventd /sbin/ueventd
 service console /system/bin/sh
     class core
     console
-    disabled
     user shell
     group log
 
 on property:ro.debuggable=1
     start console
 
-#service recovery /sbin/recovery
+service recovery /sbin/recovery
+class main
 
-#service adbd /sbin/adbd recovery
-#    disabled
+service adbd /sbin/adbd recovery
 
 on property:persist.service.adb.enable=1
     start adbd
